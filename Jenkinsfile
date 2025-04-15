@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Cloner le dépôt') {
             steps {
-                git url: 'https://github.com/diaga687/flask-ci-cd.git', branch: 'main'
+                git 'https://github.com/diaga687/flask-ci-cd.git'
             }
         }
 
@@ -16,13 +16,25 @@ pipeline {
 
         stage('Installer les dépendances') {
             steps {
-                sh '. venv/bin/activate && pip install -r requirements.txt'
+                sh '''
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Lancer les tests') {
             steps {
-                sh '. venv/bin/activate && pytest'
+                sh '''
+                    . venv/bin/activate
+                    pytest
+                '''
+            }
+        }
+
+        stage('Construire l\'image Docker') {
+            steps {
+                sh 'docker build -t flask-app-ci .'
             }
         }
     }
@@ -32,7 +44,7 @@ pipeline {
             echo '✅ Tests OK !'
         }
         failure {
-            echo '❌ Erreur dans le pipeline.'
+            echo '❌ Échec du pipeline'
         }
     }
 }
