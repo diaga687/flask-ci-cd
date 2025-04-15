@@ -1,50 +1,55 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = 'diaga687/flask-app-ci'
+        DOCKER_CREDENTIALS_ID = 'dockerhub-creds'
+    }
+
     stages {
-        stage('Cloner le dépôt') {
+        stage('Checkout') {
             steps {
-                git url: 'https://github.com/diaga687/flask-ci-cd.git', branch: 'main'
+                checkout scm
             }
         }
 
-        stage('Créer un environnement virtuel') {
+        stage('Build Docker Image') {
             steps {
-                sh 'python3 -m venv venv'
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
             }
         }
 
-        stage('Installer les dépendances') {
+        stage('Login to Docker Hub') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    pip install -r requirements.txt
-                '''
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: "${DOCKER_CREDENTIALS_ID}",
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                    }
+                }
             }
         }
 
-        stage('Lancer les tests') {
+        stage('Push Docker Image') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    pytest
-                '''
-            }
-        }
-
-        stage('Construire l\'image Docker') {
-            steps {
-                sh 'docker build -t flask-app-ci .'
+                script {
+                    sh "docker push ${DOCKER_IMAGE}"
+                }
             }
         }
     }
 
     post {
         success {
-            echo '✅ Tests OK !'
+            echo "✅ Image Docker poussée avec succès sur Docker Hub !"
         }
         failure {
-            echo '❌ Échec du pipeline'
+            echo "❌ Échec du pipeline."
         }
     }
 }
