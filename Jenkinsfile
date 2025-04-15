@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Cloner le dépôt') {
             steps {
-                git 'git url: 'https://github.com/diaga687/flask-ci-cd.git', branch: 'main''
+                git url: 'https://github.com/diaga687/flask-ci-cd.git', branch: 'main'
             }
         }
 
